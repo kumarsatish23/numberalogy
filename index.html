@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vasturaksha</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .highlight {
+            background-color: rgba(102, 255, 0, 0.401);
+            transition: background-color 0.3s ease;
+        }
+
+        .strike {
+            background-color: rgba(255, 0, 0, 0.213);
+            transition: background-color 0.3s ease;
+        }
+
+        .matrix-cell {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            line-height: 50px;
+            border: 1px solid #ccc;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .matrix-cell:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .matrix-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .card {
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card-body {
+            text-align: center;
+        }
+
+        .card-header {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 0;
+            background-color: #feb939;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+        }
+
+        /* Additional Styles for Highlight and Strike in Printing */
+        @media print {
+        .highlight, .strike {
+            background-color: transparent !important;
+        }
+
+        .matrix-cell.highlight {
+            background-color: rgba(102, 255, 0, 0.401) !important;
+        }
+
+        .matrix-cell.strike {
+            background-color: rgba(255, 0, 0, 0.213) !important;
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card mt-5">
+            <div class="card-header">
+                <h1 class="card-title">vasturaksha</h1>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <!-- <label for="dateInput">Select Date:</label> -->
+                    <input type="date" id="dateInput" class="form-control">
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Chart A</h2>
+                        <div id="chartA" class="matrix-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Chart B</h2>
+                        <div id="chartB" class="matrix-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h2 class="card-title">Digit Frequency</h2>
+            </div>
+            <div class="card-body">
+                <div id="digitFrequency"></div>
+            </div>
+        </div>
+
+        <div class="card mt-3" id="descriptionCard" style="display: none;">
+            <div class="card-header">
+                <h2 class="card-title">Analysis Description</h2>
+            </div>
+            <div class="card-body">
+                <p id="descriptionText"></p>
+            </div>
+        </div>
+
+        <!-- Print to PDF Button -->
+        <!-- <div class="card mt-3">
+            <div class="card-body">
+                <button id="printPdfButton" class="btn btn-primary">Print to PDF</button>
+            </div>
+        </div> -->
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.getElementById('dateInput').addEventListener('change', highlight);
+
+        function highlight() {
+            let dateInput = document.getElementById('dateInput').value;
+            let date = new Date(dateInput);
+            let day = date.getDate();
+            let month = date.getMonth() + 1; // Month is zero-based, so we add 1
+            let year = date.getFullYear();
+
+            let digitsToHighlight = getDigitsToHighlight(day, month, year);
+
+            let digitFrequency = countDigitFrequency(day, month, year);
+
+            let a = [[3,6,9],[2,5,8],[1,4,7]];
+            let b = [[4,9,2],[3,5,7],[8,1,6]];
+
+            let strikeRowsA = [];
+            let strikeColsA = [];
+            let strikeDiagonalsA = [true, true];
+            let strikeRowsB = [];
+            let strikeColsB = [];
+            let strikeDiagonalsB = [true, true];
+
+            for (let i = 0; i < a.length; i++) {
+                let rowHasHighlightA = false;
+                let rowHasHighlightB = false;
+                for (let j = 0; j < a[i].length; j++) {
+                    if (digitsToHighlight.includes(a[i][j])) {
+                        rowHasHighlightA = true;
+                    }
+                    if (digitsToHighlight.includes(b[i][j])) {
+                        rowHasHighlightB = true;
+                    }
+                }
+                if (!rowHasHighlightA) {
+                    strikeRowsA.push(i);
+                }
+                if (!rowHasHighlightB) {
+                    strikeRowsB.push(i);
+                }
+                let colHasHighlightA = false;
+                let colHasHighlightB = false;
+                for (let j = 0; j < a.length; j++) {
+                    if (digitsToHighlight.includes(a[j][i])) {
+                        colHasHighlightA = true;
+                    }
+                    if (digitsToHighlight.includes(b[j][i])) {
+                        colHasHighlightB = true;
+                    }
+                }
+                if (!colHasHighlightA) {
+                    strikeColsA.push(i);
+                }
+                if (!colHasHighlightB) {
+                    strikeColsB.push(i);
+                }
+                if (digitsToHighlight.includes(a[i][i])) {
+                    strikeDiagonalsA[0] = false;
+                }
+                if (digitsToHighlight.includes(a[i][a.length - 1 - i])) {
+                    strikeDiagonalsA[1] = false;
+                }
+                if (digitsToHighlight.includes(b[i][i])) {
+                    strikeDiagonalsB[0] = false;
+                }
+                if (digitsToHighlight.includes(b[i][b.length - 1 - i])) {
+                    strikeDiagonalsB[1] = false;
+                }
+            }
+
+            let chartA = document.getElementById('chartA');
+            chartA.innerHTML = '';
+            let tableA = createMatrixTable(a, digitsToHighlight, strikeRowsA, strikeColsA, strikeDiagonalsA);
+            chartA.appendChild(tableA);
+
+            let chartB = document.getElementById('chartB');
+            chartB.innerHTML = '';
+            let tableB = createMatrixTable(b, digitsToHighlight, strikeRowsB, strikeColsB, strikeDiagonalsB);
+            chartB.appendChild(tableB);
+
+            let digitFrequencyContainer = document.getElementById('digitFrequency');
+            digitFrequencyContainer.innerHTML = '';
+            let frequencyTable = createFrequencyTable(digitFrequency);
+            digitFrequencyContainer.appendChild(frequencyTable);
+
+            let descriptionCard = document.getElementById('descriptionCard');
+            let descriptionText = document.getElementById('descriptionText');
+            descriptionText.textContent = getDescription(a, b, strikeRowsA, strikeColsA, strikeDiagonalsA, strikeRowsB, strikeColsB, strikeDiagonalsB, digitFrequency);
+            if (descriptionText.textContent.trim() !== '') {
+                descriptionCard.style.display = 'block';
+            } else {
+                descriptionCard.style.display = 'none';
+            }
+        }
+
+        function getDigitsToHighlight(day, month, year) {
+            let digits = [];
+            let dateString = day.toString() + month.toString() + year.toString();
+            for (let i = 0; i < dateString.length; i++) {
+                let digit = parseInt(dateString.charAt(i));
+                if (digit !== 0 && !digits.includes(digit)) {
+                    digits.push(digit);
+                }
+            }
+            return digits;
+        }
+
+        function countDigitFrequency(day, month, year) {
+            let digitFrequency = {};
+            let dateString = day.toString() + month.toString() + year.toString();
+            for (let i = 0; i < dateString.length; i++) {
+                let digit = parseInt(dateString.charAt(i));
+                if (digit !== 0) {
+                    if (digit in digitFrequency) {
+                        digitFrequency[digit]++;
+                    } else {
+                        digitFrequency[digit] = 1;
+                    }
+                }
+            }
+            return digitFrequency;
+        }
+
+        function getDescription(a, b, strikeRowsA, strikeColsA, strikeDiagonalsA, strikeRowsB, strikeColsB, strikeDiagonalsB, digitFrequency) {
+            let description = '';
+
+            // Check if any rows, columns, or diagonals in Chart A do not contain highlighted digits
+            if (strikeRowsA.length > 0 || strikeColsA.length > 0 || strikeDiagonalsA.includes(true)) {
+                description += 'In Chart A:\n';
+
+                // Rows in Chart A
+                if (strikeRowsA.length > 0) {
+                    description += `Some rows in Chart A do not contain highlighted digits. For example, consider the following data:\n`;
+                    strikeRowsA.forEach(row => {
+                        description += `Row ${row + 1}: ${a[row].join(', ')}\n`;
+                    });
+                    description += '\n';
+                } else {
+                    description += 'All rows in Chart A contain highlighted digits.\n\n';
+                }
+
+                // Columns in Chart A
+                if (strikeColsA.length > 0) {
+                    description += `Some columns in Chart A do not contain highlighted digits. For example, consider the following data:\n`;
+                    for (let col = 0; col < a.length; col++) {
+                        let columnData = [];
+                        a.forEach(row => {
+                            columnData.push(row[col]);
+                        });
+                        if (strikeColsA.includes(col)) {
+                            description += `Column ${col + 1}: ${columnData.join(', ')}\n`;
+                        }
+                    }
+                    description += '\n';
+                } else {
+                    description += 'All columns in Chart A contain highlighted digits.\n\n';
+                }
+
+                // Diagonals in Chart A
+                if (strikeDiagonalsA.includes(true)) {
+                    description += 'Some diagonals in Chart A do not contain highlighted digits. For example, consider the following diagonal data:\n';
+                    let diagonalData = [];
+                    for (let i = 0; i < a.length; i++) {
+                        diagonalData.push(a[i][i]);
+                    }
+                    description += `Main diagonal: ${diagonalData.join(', ')}\n`;
+                    diagonalData = [];
+                    for (let i = 0; i < a.length; i++) {
+                        diagonalData.push(a[i][a.length - 1 - i]);
+                    }
+                    description += `Secondary diagonal: ${diagonalData.join(', ')}\n\n`;
+                } else {
+                    description += 'All diagonals in Chart A contain highlighted digits.\n\n';
+                }
+            } else {
+                description += 'All rows, columns, and diagonals in Chart A contain highlighted digits.\n\n';
+            }
+
+            // Check if any rows, columns, or diagonals in Chart B do not contain highlighted digits
+            if (strikeRowsB.length > 0 || strikeColsB.length > 0 || strikeDiagonalsB.includes(true)) {
+                description += 'In Chart B:\n';
+
+                // Rows in Chart B
+                if (strikeRowsB.length > 0) {
+                    description += `Some rows in Chart B do not contain highlighted digits. For example, consider the following data:\n`;
+                    strikeRowsB.forEach(row => {
+                        description += `Row ${row + 1}: ${b[row].join(', ')}\n`;
+                    });
+                    description += '\n';
+                } else {
+                    description += 'All rows in Chart B contain highlighted digits.\n\n';
+                }
+
+                // Columns in Chart B
+                if (strikeColsB.length > 0) {
+                    description += `Some columns in Chart B do not contain highlighted digits. For example, consider the following data:\n`;
+                    for (let col = 0; col < b.length; col++) {
+                        let columnData = [];
+                        b.forEach(row => {
+                            columnData.push(row[col]);
+                        });
+                        if (strikeColsB.includes(col)) {
+                            description += `Column ${col + 1}: ${columnData.join(', ')}\n`;
+                        }
+                    }
+                    description += '\n';
+                } else {
+                    description += 'All columns in Chart B contain highlighted digits.\n\n';
+                }
+
+                // Diagonals in Chart B
+                if (strikeDiagonalsB.includes(true)) {
+                    description += 'Some diagonals in Chart B do not contain highlighted digits. For example, consider the following diagonal data:\n';
+                    let diagonalData = [];
+                    for (let i = 0; i < b.length; i++) {
+                        diagonalData.push(b[i][i]);
+                    }
+                    description += `Main diagonal: ${diagonalData.join(', ')}\n`;
+                    diagonalData = [];
+                    for (let i = 0; i < b.length; i++) {
+                        diagonalData.push(b[i][b.length - 1 - i]);
+                    }
+                    description += `Secondary diagonal: ${diagonalData.join(', ')}\n\n`;
+                } else {
+                    description += 'All diagonals in Chart B contain highlighted digits.\n\n';
+                }
+            } else {
+                description += 'All rows, columns, and diagonals in Chart B contain highlighted digits.\n\n';
+            }
+
+            // Digit Frequency Table Description
+            description += 'Digit Frequency:\n';
+
+            // Iterate over digits from 1 to 9
+            for (let digit = 1; digit <= 9; digit++) {
+                // Check if the digit exists in the frequency data
+                if (digitFrequency[digit]) {
+                    description += `${digit}: ${digitFrequency[digit]} occurrence(s)\n`;
+                } else {
+                    description += `${digit}: No occurrence\n`;
+                }
+            }
+
+            description += '\n';
+
+            return description;
+        }
+
+
+        function createFrequencyTable(digitFrequency) {
+            let table = document.createElement('table');
+            table.classList.add('table', 'table-bordered');
+            let headerRow = document.createElement('tr');
+            let digitHeader = document.createElement('th');
+            digitHeader.textContent = 'Digit';
+            headerRow.appendChild(digitHeader);
+            let frequencyHeader = document.createElement('th');
+            frequencyHeader.textContent = 'Frequency';
+            headerRow.appendChild(frequencyHeader);
+            table.appendChild(headerRow);
+
+            for (let digit = 1; digit <= 9; digit++) {
+                let row = document.createElement('tr');
+                let digitCell = document.createElement('td');
+                digitCell.textContent = digit;
+                row.appendChild(digitCell);
+                let frequencyCell = document.createElement('td');
+                frequencyCell.textContent = digitFrequency[digit] || 0;
+                row.appendChild(frequencyCell);
+                table.appendChild(row);
+            }
+
+            return table;
+        }
+
+        function createMatrixTable(matrix, digitsToHighlight, strikeRows, strikeCols, strikeDiagonals) {
+            let table = document.createElement('table');
+            table.classList.add('table', 'table-bordered');
+            let rowLength = matrix.length;
+            for (let i = 0; i < rowLength; i++) {
+                let row = document.createElement('tr');
+                for (let j = 0; j < rowLength; j++) {
+                    let cell = document.createElement('td');
+                    cell.classList.add('matrix-cell');
+                    cell.textContent = matrix[i][j];
+                    let digit = matrix[i][j];
+                    if (digitsToHighlight.includes(digit)) {
+                        cell.classList.add('highlight');
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+
+            for (let i = 0; i < rowLength; i++) {
+                if (strikeRows.includes(i)) {
+                    let row = table.rows[i];
+                    for (let j = 0; j < rowLength; j++) {
+                        row.cells[j].classList.add('strike');
+                    }
+                }
+            }
+
+            for (let j = 0; j < rowLength; j++) {
+                if (strikeCols.includes(j)) {
+                    for (let i = 0; i < rowLength; i++) {
+                        table.rows[i].cells[j].classList.add('strike');
+                    }
+                }
+            }
+
+            if (strikeDiagonals[0]) {
+                for (let i = 0; i < rowLength; i++) {
+                    table.rows[i].cells[i].classList.add('strike');
+                }
+            }
+
+            if (strikeDiagonals[1]) {
+                for (let i = 0; i < rowLength; i++) {
+                    table.rows[i].cells[rowLength - 1 - i].classList.add('strike');
+                }
+            }
+
+            return table;
+        }
+
+        // Print to PDF Button Functionality
+        document.getElementById('printPdfButton').addEventListener('click', function () {
+            let printContents = document.getElementById('chartA').innerHTML + document.getElementById('chartB').innerHTML;
+            let originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+        });
+    </script>
+</body>
+</html>
