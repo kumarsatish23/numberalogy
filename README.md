@@ -27,7 +27,7 @@ Vasturaksha is a web application designed to visualize and analyze data using tw
 ### CSS Styles
 - Custom CSS styles define the appearance of elements, including colors, transitions, and hover effects.
 - Additional styles for printing ensure that highlighting and striking effects are preserved in printed documents.
-
+![Image Alt Text](./output.png)
 ### JavaScript Functions
 - JavaScript functions handle user interaction and data manipulation.
 - Functions are defined for date selection, digit highlighting, data analysis, and table generation.
